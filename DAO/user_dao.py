@@ -26,7 +26,7 @@ class UserDAO:
         query = select(User).where(User.id == user_id)
         user = await db.execute(query)
 
-        return user
+        return user.scalars().first()
 
     @classmethod
     async def get_user_by_github_id(cls, db: AsyncSession, github_id: int):

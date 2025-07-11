@@ -9,6 +9,7 @@ from database.database import engine, Base, get_db
 # from routes.user_router import user_router
 from routes.admin_router import admin_router
 from routes.gitgub_auth_router import auth_router
+from routes.public_router import public_router
 # from routes.something_router import something_router
 
 app = FastAPI()
@@ -41,9 +42,9 @@ async def startup_event():
     await create_tables()
 
 
-#app.include_router(something_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(public_router)
 
 
 @app.get("/")

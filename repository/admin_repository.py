@@ -2,6 +2,7 @@ from fastapi import Depends
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from DAO.user_dao import UserDAO
 from database.database import get_db
 from database import models
 from helpers.token_helper import get_token, verify_token
@@ -22,3 +23,9 @@ async def get_current_admin(db: AsyncSession = Depends(get_db),
 
     return user
 
+
+async def get_user(db: AsyncSession = Depends(get_db)):
+    user = await UserDAO.get_user_by_id(db=db,
+                                  user_id=1)
+    
+    return user
