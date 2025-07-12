@@ -51,8 +51,21 @@ async def get_me(response: Response,
 
     return {
     "user_github_data": user_github_data,
-    "user_data": user_data
+    "user_data": user_data,
+    "user_bio": user.bio
 }
+
+
+@admin_router.patch("/change_bio", status_code=200, tags=["admin"])
+async def change_bio(response: Response,
+                     request: schema.ChangeBio,
+                     user_data: User = Depends(get_current_admin),
+                     db: AsyncSession = Depends(get_db)):
+    
+    return await admin_repository.change_bio(request=request, 
+                                       response=response, 
+                                       user=user_data, 
+                                       db=db)
 
 # @user_router.get("/me/somethings", status_code=200, tags=["users"])
 # async def get_current_user_somethings(current_user: schema.User = Depends(get_current_user),

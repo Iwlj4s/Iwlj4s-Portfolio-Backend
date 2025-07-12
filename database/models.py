@@ -18,4 +18,3 @@ class User(Base):
     bio: Mapped[str] = mapped_column(String, nullable=True)          
 
     
-

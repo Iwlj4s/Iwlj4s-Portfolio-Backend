@@ -35,5 +35,6 @@ async def get_public_profile(response: Response,
 
     return {
     "user_github_data": user_github_data,
-    "user_data": user_data
+    "user_data": user_data,
+    "user_bio": user.bio
 }

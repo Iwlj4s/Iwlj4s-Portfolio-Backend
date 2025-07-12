@@ -15,7 +15,7 @@ class User(BaseModel):
     avatar_url: Union[str, None] = Field(default=None, title="Аватарка пользователя")
 
 
-class Bio(BaseModel):
+class ChangeBio(BaseModel):
     bio: Union[str, None] = Field(default="Нет информации", min_length=10, title="Информация о себе")
 
 
