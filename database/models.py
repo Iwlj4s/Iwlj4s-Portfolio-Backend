@@ -12,7 +12,10 @@ class User(Base):
     github_login: Mapped[str] = mapped_column(String)  
     name: Mapped[str] = mapped_column(String)          
     email: Mapped[str] = mapped_column(String, unique=True, nullable=True)
+    telegram: Mapped[str] = mapped_column(String, nullable=True)
 
     avatar_url: Mapped[str] = mapped_column(String, nullable=True)
+    bio: Mapped[str] = mapped_column(String, nullable=True)          
+
     
 

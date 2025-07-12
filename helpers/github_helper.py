@@ -54,7 +54,8 @@ async def github_auth_flow(code: str,
             github_login=github_user["login"],
             name=github_user.get("name") or github_user["login"],  
             avatar_url=github_user["avatar_url"],
-            email="iwlj4s@inbox.ru"  
+            email="iwlj4s@inbox.ru",
+            telegram="@Iwlj4s"  
         )
         db.add(user)
         await db.commit()

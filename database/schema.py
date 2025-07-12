@@ -11,9 +11,12 @@ class User(BaseModel):
     user_name: Union[str, None] = Field(default=None, min_length=3, title="Имя пользователя")
     name: Union[str, None] = Field(default=None, min_length=3, title="User name пользователя")
     email: Union[str, None] = Field(default=None, title="Эл.почта пользователя")
-
+    telegram: Union[str, None] = Field(default=None, title="Телеграм пользователя")
     avatar_url: Union[str, None] = Field(default=None, title="Аватарка пользователя")
 
+
+class Bio(BaseModel):
+    bio: Union[str, None] = Field(default="Нет информации", min_length=10, title="Информация о себе")
 
 
 # Token #

@@ -33,17 +33,26 @@ async def get_me(response: Response,
                  db: AsyncSession = Depends(get_db)):
     user = await admin_repository.get_user(db=db)
 
-    return {
-        "status": 200,
-        "user": {
-            "id": user.id,
-            "github_id": user.github_id,
-            "github_login": user.github_login,
-            "name": user.name,
-            "avatar_url": user.avatar_url,
-            "email": user.email
-        }
+    if not user:
+        return {"status": 404, 
+                "message": "User not found"}
+    
+    user_github_data = {
+        "github_login": user.github_login,
+        "name": user.name,
+        "avatar_url": user.avatar_url
     }
+
+    user_data = { 
+        "id": user.id,
+        "email": user.email,
+        "telegram": user.telegram
+    }
+
+    return {
+    "user_github_data": user_github_data,
+    "user_data": user_data
+}
 
 # @user_router.get("/me/somethings", status_code=200, tags=["users"])
 # async def get_current_user_somethings(current_user: schema.User = Depends(get_current_user),

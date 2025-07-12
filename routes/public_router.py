@@ -19,15 +19,21 @@ async def get_public_profile(response: Response,
     if not user:
         return {"status": 404, 
                 "message": "User not found"}
-
-    return {
-    "status": 200,
-    "user": {
-        "id": user.id,
-        "github_id": user.github_id,
+    
+    user_github_data = {
         "github_login": user.github_login,
         "name": user.name,
-        "avatar_url": user.avatar_url,
-        "email": user.email
+        "avatar_url": user.avatar_url
     }
+
+    user_data = { 
+        "id": user.id,
+        "email": user.email,
+        "telegram": user.telegram
+    }
+    
+
+    return {
+    "user_github_data": user_github_data,
+    "user_data": user_data
 }
