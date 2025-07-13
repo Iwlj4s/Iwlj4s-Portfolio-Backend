@@ -30,7 +30,8 @@ async def get_me(response: Response,
 
 @admin_router.get("/profile", status_code=200, tags=["admin"])
 async def get_me(response: Response, 
-                 db: AsyncSession = Depends(get_db)):
+                 db: AsyncSession = Depends(get_db),
+                 user_data: User = Depends(get_current_admin)):
     user = await admin_repository.get_user(db=db)
 
     if not user:
