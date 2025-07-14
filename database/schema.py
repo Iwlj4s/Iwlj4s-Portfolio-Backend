@@ -19,6 +19,10 @@ class ChangeBio(BaseModel):
     bio: Union[str, None] = Field(default="Нет информации", min_length=10, title="Информация о себе")
 
 
+class AddProject(BaseModel):
+    repository_name: Union[str, None] = Field(title="Название репы")
+
+
 # Token #
 class Token(BaseModel):
     access_token: str

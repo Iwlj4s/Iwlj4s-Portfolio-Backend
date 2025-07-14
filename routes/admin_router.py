@@ -1,3 +1,4 @@
+import json
 from fastapi import Depends, APIRouter, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,9 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_db
 from database.schema import User
 from database import schema, models
+from helpers import github_helper
 from helpers.general_helper import CheckHTTP404NotFound
 
 from DAO.general_dao import GeneralDAO
+from DAO.project_dao import ProjectDAO
 from repository import admin_repository
 from repository.admin_repository import get_current_admin
 
@@ -67,6 +70,32 @@ async def change_bio(response: Response,
                                        response=response, 
                                        user=user_data, 
                                        db=db)
+
+# PROJECTS #
+@admin_router.post("/projects/add")
+async def add_project(response: Response,
+                    request: schema.AddProject,
+                    user_data: User = Depends(get_current_admin),
+                    db: AsyncSession = Depends(get_db)):
+    
+    
+    user = await admin_repository.get_user(db=db)
+    print("USER", user)
+    github_data = await github_helper.get_gitgub_repository(repo_owner=user.github_login,
+                                                            repo_name=request.repository_name)
+    print("User data")
+
+    print(f"Type of github_data: {type(github_data)}")
+    print(f"Content sample: {str(github_data)[:200]}...")
+    print(f"JSON serialized: {json.dumps(github_data, default=str)[:200]}...")
+
+    await ProjectDAO.add_project(db=db,
+                                repo_name=request.repository_name,
+                                owner_name=user.github_login,
+                                github_data=github_data)
+    
+    
+    return {'status': "created"}
 
 # @user_router.get("/me/somethings", status_code=200, tags=["users"])
 # async def get_current_user_somethings(current_user: schema.User = Depends(get_current_user),

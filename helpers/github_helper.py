@@ -1,10 +1,11 @@
 from fastapi import HTTPException, status, Response
 import httpx
+import base64
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from DAO.user_dao import UserDAO
 from config import settings
-from database import models
+from database import models, schema
 from helpers.jwt_helper import create_access_token
 
 
@@ -82,3 +83,52 @@ async def github_auth_flow(code: str,
             "email": user.email
         }
     }
+
+
+async def get_gitgub_repository(repo_owner: str,
+                                repo_name: str) -> dict:
+    
+    """
+        Taking repo from https://api.github.com/repos/ 
+    """
+    async with httpx.AsyncClient() as client:
+
+        repo_response = await client.get(
+            f"https://api.github.com/repos/{repo_owner}/{repo_name}",
+            headers={"Accept": "application/vnd.github.v3+json"}
+        )
+
+        if repo_response.status_code != 200:
+            raise HTTPException(
+                status_code=repo_response.status_code,
+                detail="Не удалось получить репозиторий"
+            )
+        
+        readme_content = ""  
+        readme_html_url = None
+        readme_data = {}
+        readme_response = await client.get(
+            f"https://api.github.com/repos/{repo_owner}/{repo_name}/readme",
+            headers={"Accept": "application/vnd.github.v3+json"},
+        )
+        if readme_response.status_code == 200:
+            readme_data = readme_response.json()
+            readme_content = base64.b64decode(readme_data['content']).decode('utf-8')
+    
+        repo_response_json = repo_response.json()
+
+        repo_data = {
+            "full_name": repo_response_json.get("full_name"),
+            "description": repo_response_json.get("description"),
+            "html_url": repo_response_json.get("html_url"),
+            "language": repo_response_json.get("language"), 
+            "created_at": repo_response_json.get("created_at"),
+            "updated_at": repo_response_json.get("updated_at"),
+            "readme_html_url": readme_data.get("html_url") if readme_data else None,
+            "readme": readme_content,
+        }
+
+        print("REPO DATA: \n", repo_data)
+
+        return repo_data
+    

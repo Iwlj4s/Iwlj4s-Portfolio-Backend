@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import String, ForeignKey, Column, Integer
+from sqlalchemy import String, ForeignKey, Column, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.database import Base
@@ -18,3 +18,14 @@ class User(Base):
     bio: Mapped[str] = mapped_column(String, nullable=True)          
 
     
+
+class Project(Base):
+    __tablename__ = 'projects'
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    repo_name: Mapped[str] = mapped_column(String, unique=True)
+    owner_name: Mapped[str] = mapped_column(String, unique=False)
+
+    full_readme: Mapped[str] = mapped_column(Text, unique=False)           
+
+    # "Cached" Github data 
+    github_data: Mapped[str] = mapped_column(Text)
