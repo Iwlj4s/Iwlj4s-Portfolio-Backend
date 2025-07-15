@@ -12,7 +12,7 @@ from helpers.jwt_helper import create_access_token
 project_token = settings.GITHUB_PROJECT_TOKEN
 headers = {
     "Accept": "application/vnd.github.v3+json",
-    "Authorization": f"{project_token}"  
+    "Authorization": f"token {project_token}"
 }
 
 async def get_github_user_data(code: str) -> dict:
@@ -154,6 +154,8 @@ def sync_get_gitgub_repository(repo_owner: str,
             f"https://api.github.com/repos/{repo_owner}/{repo_name}",
             headers=headers
         )
+
+        print("GitHub request headers:", headers)
 
         if repo_response.status_code != 200:
             raise HTTPException(
