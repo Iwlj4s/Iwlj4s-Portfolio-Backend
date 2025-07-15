@@ -2,8 +2,9 @@ import json
 from fastapi import Depends, APIRouter, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
-from database.database import get_db
+from database.database import get_db, get_sync_db
 from database.schema import User
 from database import schema, models
 from helpers import github_helper
@@ -72,7 +73,7 @@ async def change_bio(response: Response,
                                        db=db)
 
 # PROJECTS #
-@admin_router.post("/projects/add")
+@admin_router.post("/projects/add", status_code=200, tags=["admin"])
 async def add_project(response: Response,
                     request: schema.AddProject,
                     user_data: User = Depends(get_current_admin),
@@ -96,6 +97,12 @@ async def add_project(response: Response,
     
     
     return {'status': "created"}
+
+@admin_router.post("/projects/update", status_code=200, tags=["admin"])
+async def update_projects(response: Response,
+                          user_data: User = Depends(get_current_admin), 
+                          db: Session = Depends(get_sync_db)):
+    return admin_repository.update_projects(db=db, response=response)
 
 # @user_router.get("/me/somethings", status_code=200, tags=["users"])
 # async def get_current_user_somethings(current_user: schema.User = Depends(get_current_user),

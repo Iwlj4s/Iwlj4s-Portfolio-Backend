@@ -21,6 +21,7 @@ class Settings:
     GITHUB_TOKEN_URL: str = os.getenv('GITHUB_TOKEN_URL')
     GITHUB_USER_URL: str = os.getenv('GITHUB_USER_URL')
     ALLOWED_GITHUB_ID: str = os.getenv('ALLOWED_GITHUB_ID')
+    GITHUB_PROJECT_TOKEN: str = os.getenv('GITHUB_PROJECT_TOKEN')
 
 
 settings = Settings()  # Create object for easy import and use them

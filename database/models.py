@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import String, ForeignKey, Column, Integer, Text
+from sqlalchemy import DateTime, String, ForeignKey, Column, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.database import Base
@@ -25,7 +25,10 @@ class Project(Base):
     repo_name: Mapped[str] = mapped_column(String, unique=True)
     owner_name: Mapped[str] = mapped_column(String, unique=False)
 
-    full_readme: Mapped[str] = mapped_column(Text, unique=False)           
+    full_readme: Mapped[str] = mapped_column(Text, unique=False)          
+
+    repo_created_at: Mapped[DateTime] = mapped_column(DateTime) 
+    repo_updated_at: Mapped[DateTime] = mapped_column(DateTime) 
 
     # "Cached" Github data 
     github_data: Mapped[str] = mapped_column(Text)

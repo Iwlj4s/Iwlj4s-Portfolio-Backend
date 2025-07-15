@@ -12,3 +12,7 @@ python-jose
 alembic~=1.15.1
 bcrypt
 httpx
+celery==5.3.0
+redis==4.5.5
+flower==1.0.0
+eventlet

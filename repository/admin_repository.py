@@ -1,11 +1,15 @@
 from fastapi import Depends, HTTPException, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
+from DAO.project_dao import ProjectDAO
 from DAO.user_dao import UserDAO
-from database.database import get_db
+from database.database import get_db, get_sync_db
 from database import models, schema
 from helpers.token_helper import get_token, verify_token
+from celery_stuff.celery_tasks import update_projects_github_data
+from helpers import github_helper
 
 from DAO.general_dao import GeneralDAO
 
@@ -48,3 +52,23 @@ async def change_bio(request: schema.ChangeBio,
         'message': 'Информация изменена',
         'new_bio': request.bio
     }
+
+def update_projects(response: Response,
+                    db: Session = Depends(get_sync_db)):
+
+    projects = ProjectDAO.sync_get_all_projects(db=db)
+
+    projects_data = [
+        {
+            "id": p.id,
+            "owner_name": p.owner_name,
+            "repo_name": p.repo_name,
+            "repo_updated_at": p.repo_updated_at.isoformat() if p.repo_updated_at else None,
+        }
+        for p in projects
+    ]
+
+
+    update_projects_github_data.delay(projects_data=projects_data)
+
+    return {'message': "Обновление проектов запущено"}

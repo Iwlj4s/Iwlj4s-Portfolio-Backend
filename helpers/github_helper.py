@@ -1,3 +1,4 @@
+import time
 from fastapi import HTTPException, status, Response
 import httpx
 import base64
@@ -8,6 +9,11 @@ from config import settings
 from database import models, schema
 from helpers.jwt_helper import create_access_token
 
+project_token = settings.GITHUB_PROJECT_TOKEN
+headers = {
+    "Accept": "application/vnd.github.v3+json",
+    "Authorization": f"{project_token}"  
+}
 
 async def get_github_user_data(code: str) -> dict:
     """Taking access_token and user data from GitHub"""
@@ -95,7 +101,7 @@ async def get_gitgub_repository(repo_owner: str,
 
         repo_response = await client.get(
             f"https://api.github.com/repos/{repo_owner}/{repo_name}",
-            headers={"Accept": "application/vnd.github.v3+json"}
+            headers=headers
         )
 
         if repo_response.status_code != 200:
@@ -109,7 +115,58 @@ async def get_gitgub_repository(repo_owner: str,
         readme_data = {}
         readme_response = await client.get(
             f"https://api.github.com/repos/{repo_owner}/{repo_name}/readme",
-            headers={"Accept": "application/vnd.github.v3+json"},
+            headers=headers
+        )
+        if readme_response.status_code == 200:
+            readme_data = readme_response.json()
+            readme_content = base64.b64decode(readme_data['content']).decode('utf-8')
+    
+        repo_response_json = repo_response.json()
+
+        repo_data = {
+            "full_name": repo_response_json.get("full_name"),
+            "description": repo_response_json.get("description"),
+            "html_url": repo_response_json.get("html_url"),
+            "language": repo_response_json.get("language"), 
+            "created_at": repo_response_json.get("created_at"),
+            "updated_at": repo_response_json.get("updated_at"),
+            "readme_html_url": readme_data.get("html_url") if readme_data else None,
+            "readme": readme_content,
+        }
+
+        print("REPO DATA: \n", repo_data)
+
+        return repo_data
+    
+
+
+def sync_get_gitgub_repository(repo_owner: str,
+                                repo_name: str) -> dict:
+    
+    """
+        SYNC FUNC FOR CELERY 
+        Taking repo from https://api.github.com/repos/ 
+    """
+    time.sleep(1)
+    with httpx.Client() as client:
+
+        repo_response = client.get(
+            f"https://api.github.com/repos/{repo_owner}/{repo_name}",
+            headers=headers
+        )
+
+        if repo_response.status_code != 200:
+            raise HTTPException(
+                status_code=repo_response.status_code,
+                detail="Не удалось получить репозиторий"
+            )
+        
+        readme_content = ""  
+        readme_html_url = None
+        readme_data = {}
+        readme_response = client.get(
+            f"https://api.github.com/repos/{repo_owner}/{repo_name}/readme",
+            headers=headers
         )
         if readme_response.status_code == 200:
             readme_data = readme_response.json()
