@@ -2,3 +2,5 @@
 .env
 .database
 .idea
+__pycache__
+venv

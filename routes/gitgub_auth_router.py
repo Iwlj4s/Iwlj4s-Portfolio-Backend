@@ -16,7 +16,7 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 @auth_router.get("/github")
 async def auth_github():
     return RedirectResponse(
-        f"{settings.GITHUB_AUTH_URL}?client_id={settings.GITHUB_CLIENT_ID}"
+        f"{settings.GITHUB_AUTH_URL}client_id={settings.GITHUB_CLIENT_ID}"
     )
 
 

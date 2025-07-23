@@ -132,6 +132,7 @@ async def get_gitgub_repository(repo_owner: str,
             "updated_at": repo_response_json.get("updated_at"),
             "readme_html_url": readme_data.get("html_url") if readme_data else None,
             "readme": readme_content,
+            "description": repo_response_json.get("description", "")
         }
 
         print("REPO DATA: \n", repo_data)
@@ -185,6 +186,7 @@ def sync_get_gitgub_repository(repo_owner: str,
             "updated_at": repo_response_json.get("updated_at"),
             "readme_html_url": readme_data.get("html_url") if readme_data else None,
             "readme": readme_content,
+            "description": repo_response_json.get("description", "")
         }
 
         print("REPO DATA: \n", repo_data)

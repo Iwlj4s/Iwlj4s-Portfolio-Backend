@@ -104,6 +104,36 @@ async def update_projects(response: Response,
                           db: Session = Depends(get_sync_db)):
     return admin_repository.update_projects(db=db, response=response)
 
+@admin_router.delete("/projects/delete/{project_id}", status_code=200, tags=["admin"])
+async def delete_project(response: Response,
+                         project_id: int,
+                         user_data: User = Depends(get_current_admin), 
+                         db: AsyncSession = Depends(get_db)):
+    await ProjectDAO.delete_project(db=db, project_id=project_id)
+
+    return{
+        "Project Deleted"
+    }
+
+@admin_router.get("/projects", status_code=200, tags=["admin"])
+async def get_projects(response: Response,
+                       user_data: User = Depends(get_current_admin), 
+                       db: AsyncSession = Depends(get_db)):
+    projects = await ProjectDAO.get_all_projects(db=db)
+
+    return[
+        {
+            "id": p.id,
+            "repo_name": p.repo_name,
+            "owner_name": p.owner_name,
+            "full_readme": p.full_readme,
+            "repo_created_at": p.repo_created_at,
+            "repo_updated_at": p.repo_updated_at
+
+        }
+        for p in projects
+    ]
+
 # @user_router.get("/me/somethings", status_code=200, tags=["users"])
 # async def get_current_user_somethings(current_user: schema.User = Depends(get_current_user),
 #                                       db: AsyncSession = Depends(get_db)):

@@ -2,6 +2,7 @@ from fastapi import Depends, APIRouter, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from DAO.project_dao import ProjectDAO
 from database.database import get_db
 
 from repository import admin_repository
@@ -38,3 +39,21 @@ async def get_public_profile(response: Response,
     "user_data": user_data,
     "user_bio": user.bio
 }
+
+@public_router.get("/projects", status_code=200, tags=["public_projects"])
+async def get_projects(response: Response,
+                       db: AsyncSession = Depends(get_db)):
+    projects = await ProjectDAO.get_all_projects(db=db)
+
+    return[
+        {
+            "id": p.id,
+            "repo_name": p.repo_name,
+            "owner_name": p.owner_name,
+            "full_readme": p.full_readme,
+            "repo_created_at": p.repo_created_at,
+            "repo_updated_at": p.repo_updated_at
+
+        }
+        for p in projects
+    ]

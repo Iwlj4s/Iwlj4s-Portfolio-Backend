@@ -29,6 +29,7 @@ class ProjectDAO:
             repo_name=repo_name,
             owner_name=owner_name,
             full_readme=github_data.get("readme", ""), 
+            description=github_data.get("description", ""),
             repo_created_at=created_at,
             repo_updated_at=updated_at,
             github_data=json.dumps(github_data)  # Сериализуем словарь в JSON строку
@@ -51,6 +52,7 @@ class ProjectDAO:
         query = update(models.Project).where(models.Project.id == project_id).values(
             repo_name=repo_name,
             full_readme=github_data.get("readme", ""), 
+            description=github_data.get("description", ""),
             repo_created_at=created_at,
             repo_updated_at=updated_at,
             github_data=json.dumps(github_data) 
@@ -67,6 +69,18 @@ class ProjectDAO:
         projects = await db.execute(query)
 
         return projects.scalars().all()
+    
+    @classmethod
+    async def delete_project(cls, db: AsyncSession, project_id: int):
+        query = delete(models.Project).where(models.Project.id == project_id)
+
+        await db.execute(query)
+        await db.commit()
+
+        return{
+            "status": "Success",
+            "message": "Project Deleted"
+        }
     
     
     # SYNC METHODS #
@@ -114,6 +128,8 @@ class ProjectDAO:
         
         project.repo_name = repo_name
         project.full_readme = github_data.get("readme", "")
+        project.description=github_data.get("description", "")
+
         project.repo_created_at = created_at
         project.repo_updated_at = updated_at
         project.github_data = json.dumps(github_data)

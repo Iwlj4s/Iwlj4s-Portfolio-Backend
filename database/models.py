@@ -25,6 +25,8 @@ class Project(Base):
     repo_name: Mapped[str] = mapped_column(String, unique=True)
     owner_name: Mapped[str] = mapped_column(String, unique=False)
 
+    description: Mapped[str] = mapped_column(String, nullable=True)
+
     full_readme: Mapped[str] = mapped_column(Text, unique=False)          
 
     repo_created_at: Mapped[DateTime] = mapped_column(DateTime) 
