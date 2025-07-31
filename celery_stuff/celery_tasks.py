@@ -5,61 +5,74 @@ from DAO.project_dao import ProjectDAO
 from database.database import SyncSessionLocal
 
 from helpers import github_helper
+from datetime import datetime
+
 
 # TODO: Add loggs using logger
 
 @app.task(bind=True, max_retries=3, default_retry_delay=60)
 def update_projects_github_data(self, projects_data):
     db = SyncSessionLocal()
+    updated = 0
     try:
-        for p in projects_data:
-            try:
-                project_id = p["id"]
-                owner_name = p["owner_name"]
-                repo_name = p["repo_name"]
-                repo_updated_at_str = p.get("repo_updated_at")
+        total = len(projects_data)
+        
+        for i, p in enumerate(projects_data):
+            project_id = p["id"]
+            owner_name = p["owner_name"]
+            repo_name = p["repo_name"]
+            db_updated_at_str = p.get("repo_updated_at")
 
-                print(f"Project {project_id} DB repo_updated_at: {repo_updated_at_str}")
+            github_data = github_helper.sync_get_gitgub_repository(
+                repo_owner=owner_name,
+                repo_name=repo_name
+            )
 
-                github_data = github_helper.sync_get_gitgub_repository(
-                    repo_owner=owner_name,
-                    repo_name=repo_name
-                )
+            if not github_data:
+                continue
 
-                if not github_data:
-                    print(f"Project {project_id}: no github data, skipping")
-                    continue
-
-                github_updated_at_str = github_data.get("updated_at")
-                print(f"Project {project_id} GITHUB repo_updated_at: {github_updated_at_str}")
-
-                if not github_updated_at_str:
-                    print(f"Project {project_id}: no updated_at in github data, skipping")
-                    continue
-
-                db_updated_at = isoparse(repo_updated_at_str).replace(tzinfo=None) if repo_updated_at_str else None
+            github_updated_at_str = github_data.get("updated_at")
+            
+            db_updated_at = None
+            if db_updated_at_str:
+                db_updated_at = datetime.strptime(db_updated_at_str, "%Y-%m-%d %H:%M:%S.%f")
+            
+            github_updated_at = None
+            if github_updated_at_str:
                 github_updated_at = isoparse(github_updated_at_str).replace(tzinfo=None)
+            
+            needs_update = False
+            if db_updated_at and github_updated_at:
+                needs_update = db_updated_at < github_updated_at
+            else:
+                needs_update = True
 
-                print(f"Project {project_id} DB updated_at: {db_updated_at}")
-                print(f"Project {project_id} GITHUB updated_at: {github_updated_at}")
+            if needs_update:
+                ProjectDAO.sync_update_project(
+                    db=db,
+                    project_id=project_id,
+                    repo_name=repo_name,
+                    github_data=github_data
+                )
+                updated += 1
 
-                if db_updated_at != github_updated_at:
-                    print(f"Updating project {project_id} because dates differ")
-                    ProjectDAO.sync_update_project(
-                        db=db,
-                        project_id=project_id,
-                        repo_name=repo_name,
-                        github_data=github_data
-                    )
-                else:
-                    print(f"Skipping project {project_id} - dates are the same")
+            self.update_state(
+                state='PROGRESS',
+                meta={
+                    'current': i + 1,
+                    'total': total,
+                    'updated': updated,
+                    'current_project': {
+                        'owner_name': owner_name,
+                        'repo_name': repo_name
+                    }
+                }
+            )
 
-            except Exception as project_exc:
-                print(f"Error processing project {p.get('id')}: {project_exc}")
-                # Можно сделать self.retry() для конкретной задачи, но осторожно с повторениями
+        return {'status': 'completed', 'updated': updated, 'total': total}
 
     except Exception as e:
-        print(f"Fatal error in update_projects_github_data: {e}")
+        print(f"Fatal error: {e}")
         raise self.retry(exc=e)
     finally:
         db.close()

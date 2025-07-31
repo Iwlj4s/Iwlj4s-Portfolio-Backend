@@ -51,6 +51,7 @@ async def get_projects(response: Response,
             "repo_name": p.repo_name,
             "owner_name": p.owner_name,
             "full_readme": p.full_readme,
+            "description": p.description,
             "repo_created_at": p.repo_created_at,
             "repo_updated_at": p.repo_updated_at
 

@@ -1,5 +1,8 @@
 import json
-from fastapi import Depends, APIRouter, Response
+import celery
+from fastapi import Depends, APIRouter, HTTPException, Response
+from celery.result import AsyncResult
+from fastapi.responses import JSONResponse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -102,7 +105,71 @@ async def add_project(response: Response,
 async def update_projects(response: Response,
                           user_data: User = Depends(get_current_admin), 
                           db: Session = Depends(get_sync_db)):
-    return admin_repository.update_projects(db=db, response=response)
+    result = admin_repository.update_projects(db=db, response=response)
+    return result
+
+@admin_router.get("/tasks/{task_id}/status", tags=["admin"])
+async def get_task_status(task_id: str):
+    try:
+        task = AsyncResult(task_id)
+        
+        if not task:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "NOT_FOUND",
+                    "state": "NOT_FOUND",
+                    "message": "Task not found or expired"
+                }
+            )
+        
+        if task.state == 'PENDING':
+            return {
+                "status": "PENDING",
+                "state": task.state,
+                "result": None
+            }
+        
+        if task.state == 'PROGRESS':
+            return {
+                "status": "PROGRESS",
+                "state": task.state,
+                "result": task.info
+            }
+        
+        if task.state == 'SUCCESS':
+            # После успеха сразу удаляем результат
+            task.forget()
+            return {
+                "status": "SUCCESS",
+                "state": task.state,
+                "result": task.result
+            }
+        
+        if task.state == 'FAILURE':
+            # После ошибки тоже удаляем
+            task.forget()
+            return {
+                "status": "FAILURE",
+                "state": task.state,
+                "result": str(task.result)
+            }
+        
+        # Для всех остальных состояний
+        return {
+            "status": task.state,
+            "state": task.state,
+            "result": None
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "ERROR",
+                "message": str(e)
+            }
+        )
 
 @admin_router.delete("/projects/delete/{project_id}", status_code=200, tags=["admin"])
 async def delete_project(response: Response,

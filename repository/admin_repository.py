@@ -63,12 +63,13 @@ def update_projects(response: Response,
             "id": p.id,
             "owner_name": p.owner_name,
             "repo_name": p.repo_name,
-            "repo_updated_at": p.repo_updated_at.isoformat() if p.repo_updated_at else None,
+            "description": p.description,
+            "repo_updated_at": p.repo_updated_at.strftime("%Y-%m-%d %H:%M:%S.%f") if p.repo_updated_at else None
         }
         for p in projects
     ]
 
 
-    update_projects_github_data.delay(projects_data=projects_data)
+    task = update_projects_github_data.delay(projects_data=projects_data)
 
-    return {'message': "Обновление проектов запущено"}
+    return {'task_id': task.id}

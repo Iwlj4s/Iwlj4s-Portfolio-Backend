@@ -167,6 +167,7 @@ def sync_get_gitgub_repository(repo_owner: str,
         readme_content = ""  
         readme_html_url = None
         readme_data = {}
+        time.sleep(0.5)
         readme_response = client.get(
             f"https://api.github.com/repos/{repo_owner}/{repo_name}/readme",
             headers=headers
