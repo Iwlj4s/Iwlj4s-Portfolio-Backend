@@ -22,37 +22,55 @@ def update_projects_github_data(self, projects_data):
             owner_name = p["owner_name"]
             repo_name = p["repo_name"]
             db_updated_at_str = p.get("repo_updated_at")
-
-            github_data = github_helper.sync_get_gitgub_repository(
+            
+            # Get just update datetime
+            github_data = github_helper.sync_get_repository_metadata(
                 repo_owner=owner_name,
                 repo_name=repo_name
             )
-
+            
             if not github_data:
                 continue
-
+                
             github_updated_at_str = github_data.get("updated_at")
             
-            db_updated_at = None
-            if db_updated_at_str:
-                db_updated_at = datetime.strptime(db_updated_at_str, "%Y-%m-%d %H:%M:%S.%f")
-            
-            github_updated_at = None
-            if github_updated_at_str:
-                github_updated_at = isoparse(github_updated_at_str).replace(tzinfo=None)
-            
+            # Fast check before update
             needs_update = False
-            if db_updated_at and github_updated_at:
+            if db_updated_at_str and github_updated_at_str:
+                db_updated_at = datetime.strptime(db_updated_at_str, "%Y-%m-%d %H:%M:%S.%f")
+                github_updated_at = isoparse(github_updated_at_str).replace(tzinfo=None)
                 needs_update = db_updated_at < github_updated_at
             else:
                 needs_update = True
-
-            if needs_update:
+                
+            if not needs_update:
+                # Skip project if he didn't change 
+                self.update_state(
+                    state='PROGRESS',
+                    meta={
+                        'current': i + 1,
+                        'total': total,
+                        'updated': updated,
+                        'current_project': {
+                            'owner_name': owner_name,
+                            'repo_name': repo_name
+                        }
+                    }
+                )
+                continue
+                
+            # If will update - load full data
+            full_github_data = github_helper.sync_get_gitgub_repository(
+                repo_owner=owner_name,
+                repo_name=repo_name
+            )
+            
+            if full_github_data:
                 ProjectDAO.sync_update_project(
                     db=db,
                     project_id=project_id,
                     repo_name=repo_name,
-                    github_data=github_data
+                    github_data=full_github_data
                 )
                 updated += 1
 
@@ -70,7 +88,6 @@ def update_projects_github_data(self, projects_data):
             )
 
         return {'status': 'completed', 'updated': updated, 'total': total}
-
     except Exception as e:
         print(f"Fatal error: {e}")
         raise self.retry(exc=e)

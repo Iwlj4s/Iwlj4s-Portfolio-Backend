@@ -1,5 +1,5 @@
 import time
-from fastapi import HTTPException, status, Response
+from fastapi import HTTPException, requests, status, Response
 import httpx
 import base64
 
@@ -193,4 +193,19 @@ def sync_get_gitgub_repository(repo_owner: str,
         print("REPO DATA: \n", repo_data)
 
         return repo_data
-    
+
+def sync_get_repository_metadata(repo_owner, repo_name):
+    """ Get repo metadata for checking needed projects updates"""
+    with httpx.Client() as client:
+        try:
+            response = client.get(
+                f"https://api.github.com/repos/{repo_owner}/{repo_name}",
+                headers=headers
+            )
+            if response.status_code == 200:
+                return {
+                    "updated_at": response.json().get("updated_at")}
+            return None
+        except Exception as e:
+            print(f"Error getting repo metadata: {e}")
+            return None
