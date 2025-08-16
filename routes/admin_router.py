@@ -108,68 +108,23 @@ async def update_projects(response: Response,
     result = admin_repository.update_projects(db=db, response=response)
     return result
 
+@admin_router.post("/projects/update/{project_id}", status_code=200, tags=["admin"])
+async def update_project(response: Response,
+                         project_id: int,
+                         user_data: User = Depends(get_current_admin),
+                         db: Session = Depends(get_sync_db)):
+    
+    result = admin_repository.update_project(db=db, response=response, project_id=project_id)
+
+    return result
+
+
 @admin_router.get("/tasks/{task_id}/status", tags=["admin"])
 async def get_task_status(task_id: str):
-    try:
-        task = AsyncResult(task_id)
+    task = AsyncResult(task_id)
+
+    return await admin_repository.get_tasks_status(task=task)
         
-        if not task:
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "NOT_FOUND",
-                    "state": "NOT_FOUND",
-                    "message": "Task not found or expired"
-                }
-            )
-        
-        if task.state == 'PENDING':
-            return {
-                "status": "PENDING",
-                "state": task.state,
-                "result": None
-            }
-        
-        if task.state == 'PROGRESS':
-            return {
-                "status": "PROGRESS",
-                "state": task.state,
-                "result": task.info
-            }
-        
-        if task.state == 'SUCCESS':
-            # После успеха сразу удаляем результат
-            task.forget()
-            return {
-                "status": "SUCCESS",
-                "state": task.state,
-                "result": task.result
-            }
-        
-        if task.state == 'FAILURE':
-            # После ошибки тоже удаляем
-            task.forget()
-            return {
-                "status": "FAILURE",
-                "state": task.state,
-                "result": str(task.result)
-            }
-        
-        # Для всех остальных состояний
-        return {
-            "status": task.state,
-            "state": task.state,
-            "result": None
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "status": "ERROR",
-                "message": str(e)
-            }
-        )
 
 @admin_router.delete("/projects/delete/{project_id}", status_code=200, tags=["admin"])
 async def delete_project(response: Response,

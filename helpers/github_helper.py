@@ -195,7 +195,9 @@ def sync_get_gitgub_repository(repo_owner: str,
         return repo_data
 
 def sync_get_repository_metadata(repo_owner, repo_name):
-    """ Get repo metadata for checking needed projects updates"""
+    """ 
+        Get repo metadata for checking needed projects updates
+    """
     with httpx.Client() as client:
         try:
             response = client.get(

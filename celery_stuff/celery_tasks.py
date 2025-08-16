@@ -93,3 +93,34 @@ def update_projects_github_data(self, projects_data):
         raise self.retry(exc=e)
     finally:
         db.close()
+
+
+@app.task(bind=True, max_retries=3, default_retry_delay=60)
+def update_project_github_data(self, project):
+    db = SyncSessionLocal()
+    try:
+        project_id = project["id"]
+        owner_name = project["owner_name"]
+        repo_name = project["repo_name"]
+        
+        full_github_data = github_helper.sync_get_gitgub_repository(
+            repo_owner=owner_name,
+            repo_name=repo_name
+        )
+        
+        if full_github_data:
+            ProjectDAO.sync_update_project(
+                db=db,
+                project_id=project_id,
+                repo_name=repo_name,
+                github_data=full_github_data
+            )
+            
+        return {'status': 'completed', 'updated': 1}
+        
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        raise self.retry(exc=e)
+    finally:
+        db.close()
+    
