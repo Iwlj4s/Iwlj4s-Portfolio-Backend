@@ -1,4 +1,5 @@
 import json
+from typing import List
 from dateutil.parser import isoparse
 from datetime import datetime
 from fastapi import HTTPException
@@ -22,6 +23,12 @@ class ProjectDAO:
         print(f"Content sample: {str(github_data)[:200]}...")
         print(f"JSON serialized: {json.dumps(github_data, default=str)[:200]}...")
 
+        get_max_project_order = await db.execute(
+            select(func.max(models.Project.display_order))
+        )
+
+        max_order = get_max_project_order.scalar() or 0
+
         created_at = isoparse(github_data["created_at"]) if github_data.get("created_at") else None
         updated_at = isoparse(github_data["updated_at"]) if github_data.get("updated_at") else None
         
@@ -32,7 +39,8 @@ class ProjectDAO:
             description=github_data.get("description", ""),
             repo_created_at=created_at,
             repo_updated_at=updated_at,
-            github_data=json.dumps(github_data)  # Сериализуем словарь в JSON строку
+            github_data=json.dumps(github_data),  
+            display_order=max_order + 1
         )
         
         db.add(new_project)
@@ -81,6 +89,22 @@ class ProjectDAO:
             "status": "Success",
             "message": "Project Deleted"
         }
+    
+    @staticmethod
+    async def reorder_projects(db: AsyncSession, project_order: List[int]):
+        for index, project_id in enumerate(project_order):
+            project = await db.get(models.Project, project_id)
+            if project:
+                project.display_order = index
+        await db.commit()
+    
+    @staticmethod
+    async def get_ordered_projects(db: AsyncSession):
+        result = await db.execute(
+            select(models.Project)
+            .order_by(models.Project.display_order)
+        )
+        return result.scalars().all()
     
     
     # SYNC METHODS #

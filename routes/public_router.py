@@ -43,7 +43,7 @@ async def get_public_profile(response: Response,
 @public_router.get("/projects", status_code=200, tags=["public_projects"])
 async def get_projects(response: Response,
                        db: AsyncSession = Depends(get_db)):
-    projects = await ProjectDAO.get_all_projects(db=db)
+    projects = await ProjectDAO.get_ordered_projects(db=db)
 
     return[
         {
@@ -51,7 +51,6 @@ async def get_projects(response: Response,
             "repo_name": p.repo_name,
             "owner_name": p.owner_name,
             "full_readme": p.full_readme,
-            "description": p.description,
             "repo_created_at": p.repo_created_at,
             "repo_updated_at": p.repo_updated_at
 

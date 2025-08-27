@@ -1,4 +1,5 @@
 import json
+from typing import List
 import celery
 from fastapi import Depends, APIRouter, HTTPException, Response
 from celery.result import AsyncResult
@@ -117,13 +118,6 @@ async def update_project(response: Response,
     result = admin_repository.update_project(db=db, response=response, project_id=project_id)
 
     return result
-
-
-@admin_router.get("/tasks/{task_id}/status", tags=["admin"])
-async def get_task_status(task_id: str):
-    task = AsyncResult(task_id)
-
-    return await admin_repository.get_tasks_status(task=task)
         
 
 @admin_router.delete("/projects/delete/{project_id}", status_code=200, tags=["admin"])
@@ -141,7 +135,7 @@ async def delete_project(response: Response,
 async def get_projects(response: Response,
                        user_data: User = Depends(get_current_admin), 
                        db: AsyncSession = Depends(get_db)):
-    projects = await ProjectDAO.get_all_projects(db=db)
+    projects = await ProjectDAO.get_ordered_projects(db=db)
 
     return[
         {
@@ -155,6 +149,37 @@ async def get_projects(response: Response,
         }
         for p in projects
     ]
+
+
+@admin_router.post("/projects/reorder", status_code=200, tags=["admin"])
+async def reorder_projects(project_order: List[int],
+                           user_data: User = Depends(get_current_admin),
+                           db: AsyncSession = Depends(get_db)):
+    await ProjectDAO.reorder_projects(db=db, project_order=project_order)
+    return {"status": "order_updated"}
+
+@admin_router.get("/projects/ordered", status_code=200, tags=["admin"])
+async def get_ordered_projects(user_data: User = Depends(get_current_admin),
+                               db: AsyncSession = Depends(get_db)):
+    projects = await ProjectDAO.get_ordered_projects(db=db)
+    return [
+        {
+            "id": p.id,
+            "repo_name": p.repo_name,
+            "owner_name": p.owner_name,
+            "full_readme": p.full_readme,
+            "repo_created_at": p.repo_created_at,
+            "repo_updated_at": p.repo_updated_at,
+            "display_order": p.display_order
+        }
+        for p in projects
+    ]
+
+@admin_router.get("/tasks/{task_id}/status", tags=["admin"])
+async def get_task_status(task_id: str):
+    task = AsyncResult(task_id)
+
+    return await admin_repository.get_tasks_status(task=task)
 
 # @user_router.get("/me/somethings", status_code=200, tags=["users"])
 # async def get_current_user_somethings(current_user: schema.User = Depends(get_current_user),

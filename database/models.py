@@ -34,3 +34,7 @@ class Project(Base):
 
     # "Cached" Github data 
     github_data: Mapped[str] = mapped_column(Text)
+
+    # Order an project for display on front ordering projects
+    display_order: Mapped[int] = mapped_column(Integer, default=0)
+
